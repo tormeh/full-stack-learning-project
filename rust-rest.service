@@ -1,0 +1,14 @@
+# This is the systemd unit file for our REST gateway
+
+[Unit]
+Description=rust-rest
+
+[Service]
+Environment=ROCKET_ENV=stage
+ExecStart=/opt/rust-rest --config-file=/etc/rust-rest.toml
+TimeoutStartSec=6
+TimeoutStopSec=4
+Restart=on-failure
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=rust-rest
