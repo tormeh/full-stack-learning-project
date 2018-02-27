@@ -99,12 +99,46 @@ fn item(item: UUID, settings: State<Settings>) -> Option<Json<SchemalessRow>>
     
 }
 
+#[delete("/item/<item>")]
+fn item_delete(item: UUID, settings: State<Settings>) -> Result<Accepted<()>, BadRequest<()>>
+{
+    let conn = get_connection(settings.inner());
+    let query = format!("DELETE FROM test where id = '{}'", item.into_inner().hyphenated().to_string());
+    println!("Query: {}", query);
+    let queryresult = conn.query(&query, &[]);
+
+    match queryresult {
+        Ok(o) => return Result::Ok(status::Accepted::<()>(None)),
+        Err(e) => {println!("{}",e); return Result::Err(status::BadRequest::<()>(None))}
+        
+    };
+    
+}
+
 #[post("/item", data = "<item_body>")]
 fn item_post(item_body: Json<itemBody>, settings: State<Settings>) -> Result<Accepted<()>, BadRequest<()>>
 {
     let conn = get_connection(settings.inner());
     let sanitized = sql_lexer::sanitize_string(item_body.content.clone());
     let query = format!("INSERT INTO test (content) VALUES (\'{}\')", sanitized);
+    println!("Query: {}", query);
+    let queryresult = conn.execute(&query, &[]);
+
+    match queryresult {
+        Ok(o) => return Result::Ok(status::Accepted::<()>(None)),
+        Err(e) => {println!("{}",e); return Result::Err(status::BadRequest::<()>(None))}
+        
+    };
+    
+}
+
+#[put("/item/<item>", data = "<item_body>")]
+fn item_put(item: UUID, item_body: Json<itemBody>, settings: State<Settings>) -> Result<Accepted<()>, BadRequest<()>>
+{
+    let conn = get_connection(settings.inner());
+    let sanitized = sql_lexer::sanitize_string(item_body.content.clone());
+    let query = format!("UPDATE test set content = \'{}\' WHERE id = '{}'", sanitized, item.into_inner().hyphenated().to_string());
+    println!("Query: {}", query);
     let queryresult = conn.execute(&query, &[]);
 
     match queryresult {
@@ -131,5 +165,5 @@ fn main() {
     let db_url = settings_list["db_url"].as_str().expect("No db_url specified in config file");
     println!("db_url: {}", db_url);
     let settings = Settings{db_url: db_url.to_string()};
-    rocket::ignite().manage(settings).mount("/", routes![hello, hello_name, list, item, item_post]).launch();
+    rocket::ignite().manage(settings).mount("/", routes![hello, hello_name, list, item, item_post, item_put, item_delete]).launch();
 }
