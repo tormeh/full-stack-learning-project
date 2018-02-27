@@ -5,7 +5,6 @@
 extern crate rocket;
 extern crate postgres;
 extern crate rocket_contrib;
-extern crate sql_lexer;
 extern crate uuid;
 extern crate toml;
 
@@ -82,8 +81,7 @@ fn list(settings: State<Settings>) -> Json<SchemalessTable>
 fn item(item: UUID, settings: State<Settings>) -> Option<Json<SchemalessRow>>
 {
     let conn = get_connection(settings.inner());
-    let sanitized = sql_lexer::sanitize_string(item.into_inner().hyphenated().to_string());
-    let query = format!("SELECT * FROM test where id = '{}'", sanitized);
+    let query = format!("SELECT * FROM test where id = '{}'", item.into_inner().hyphenated().to_string());
     println!("Query: {}", query);
     let queryresult = &conn.query(&query, &[]).unwrap();
     if queryresult.is_empty()
@@ -119,8 +117,7 @@ fn item_delete(item: UUID, settings: State<Settings>) -> Result<Accepted<()>, Ba
 fn item_post(item_body: Json<itemBody>, settings: State<Settings>) -> Result<Accepted<()>, BadRequest<()>>
 {
     let conn = get_connection(settings.inner());
-    let sanitized = sql_lexer::sanitize_string(item_body.content.clone());
-    let query = format!("INSERT INTO test (content) VALUES (\'{}\')", sanitized);
+    let query = format!("INSERT INTO test (content) VALUES (\'{}\')", item_body.content);
     println!("Query: {}", query);
     let queryresult = conn.execute(&query, &[]);
 
@@ -136,8 +133,7 @@ fn item_post(item_body: Json<itemBody>, settings: State<Settings>) -> Result<Acc
 fn item_put(item: UUID, item_body: Json<itemBody>, settings: State<Settings>) -> Result<Accepted<()>, BadRequest<()>>
 {
     let conn = get_connection(settings.inner());
-    let sanitized = sql_lexer::sanitize_string(item_body.content.clone());
-    let query = format!("UPDATE test set content = \'{}\' WHERE id = '{}'", sanitized, item.into_inner().hyphenated().to_string());
+    let query = format!("UPDATE test set content = \'{}\' WHERE id = '{}'", item_body.content, item.into_inner().hyphenated().to_string());
     println!("Query: {}", query);
     let queryresult = conn.execute(&query, &[]);
 
