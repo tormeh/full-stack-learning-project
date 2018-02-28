@@ -82,7 +82,6 @@ fn item(item: UUID, settings: State<Settings>) -> Option<Json<SchemalessRow>>
 {
     let conn = get_connection(settings.inner());
     let query = format!("SELECT * FROM test where id = '{}'", item.into_inner().hyphenated().to_string());
-    println!("Query: {}", query);
     let queryresult = &conn.query(&query, &[]).unwrap();
     if queryresult.is_empty()
     {
@@ -117,9 +116,7 @@ fn item_delete(item: UUID, settings: State<Settings>) -> Result<Accepted<()>, Ba
 fn item_post(item_body: Json<itemBody>, settings: State<Settings>) -> Result<Accepted<()>, BadRequest<()>>
 {
     let conn = get_connection(settings.inner());
-    let query = format!("INSERT INTO test (content) VALUES (\'{}\')", item_body.content);
-    println!("Query: {}", query);
-    let queryresult = conn.execute(&query, &[]);
+    let queryresult = conn.execute("INSERT INTO test (content) VALUES ($1::text)", &[&item_body.content]);
 
     match queryresult {
         Ok(o) => return Result::Ok(status::Accepted::<()>(None)),
@@ -133,9 +130,8 @@ fn item_post(item_body: Json<itemBody>, settings: State<Settings>) -> Result<Acc
 fn item_put(item: UUID, item_body: Json<itemBody>, settings: State<Settings>) -> Result<Accepted<()>, BadRequest<()>>
 {
     let conn = get_connection(settings.inner());
-    let query = format!("UPDATE test set content = \'{}\' WHERE id = '{}'", item_body.content, item.into_inner().hyphenated().to_string());
-    println!("Query: {}", query);
-    let queryresult = conn.execute(&query, &[]);
+    let query = format!("UPDATE test set content = $1 WHERE id = '{}'", item.into_inner().hyphenated().to_string());
+    let queryresult = conn.execute(&query, &[&item_body.content]);
 
     match queryresult {
         Ok(o) => return Result::Ok(status::Accepted::<()>(None)),
