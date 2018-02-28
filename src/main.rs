@@ -27,6 +27,10 @@ use toml::Value;
 use std::fs::File;
 use std::io::prelude::*;
 
+use std::io;
+
+use rocket::response::NamedFile;
+
 
 #[derive(Serialize)]
 struct SchemalessTable {
@@ -55,8 +59,8 @@ fn get_connection(settings: &Settings) -> postgres::Connection
 }
 
 #[get("/")]
-fn hello() -> &'static str {
-    "Hello, world!"
+fn index() -> io::Result<NamedFile> {
+    NamedFile::open("/opt/index.html")
 }
 
 #[get("/hello/<name>/<age>")]
@@ -157,5 +161,5 @@ fn main() {
     let db_url = settings_list["db_url"].as_str().expect("No db_url specified in config file");
     println!("db_url: {}", db_url);
     let settings = Settings{db_url: db_url.to_string()};
-    rocket::ignite().manage(settings).mount("/", routes![hello, hello_name, list, item, item_post, item_put, item_delete]).launch();
+    rocket::ignite().manage(settings).mount("/", routes![index, hello_name, list, item, item_post, item_put, item_delete]).launch();
 }
